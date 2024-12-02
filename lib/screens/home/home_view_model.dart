@@ -96,6 +96,10 @@ class HomeViewModel extends ChangeNotifier {
     }
     player.seek(Duration(seconds: value.toInt()));
   }
+
+  void onDispose() {
+    player.dispose();
+  }
 }
 
 enum ViewState {
