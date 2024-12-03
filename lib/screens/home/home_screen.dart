@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_music_test/components/app_text.dart';
 import 'package:flutter_music_test/extensions/app_extensions.dart';
+import 'package:flutter_music_test/models/lyric_item_model.dart';
 import 'package:flutter_music_test/models/lyric_model.dart';
 import 'package:flutter_music_test/resources/app_assets.dart';
 import 'package:flutter_music_test/resources/app_colors.dart';
@@ -98,37 +99,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 selector: (_, vm) =>
                                                     vm.lyricModel,
                                                 builder: (_, lyricModel, __) {
-                                                  return Wrap(
-                                                    alignment:
-                                                        WrapAlignment.center,
-                                                    children: List.generate(
-                                                        lyricModel.lyrics
-                                                            .length, (index) {
-                                                      final lyric = lyricModel
-                                                          .lyrics[index];
-                                                      final isActive =
-                                                          currentPosition >=
-                                                              lyric.time;
-                                                      return AnimatedDefaultTextStyle(
-                                                        curve:
-                                                            Curves.bounceInOut,
-                                                        duration:
-                                                            const Duration(
-                                                          milliseconds: 400,
-                                                        ),
-                                                        style: TextStyle(
-                                                          fontSize: 16,
-                                                          color: isActive
-                                                              ? AppColors
-                                                                  .h000000
-                                                              : AppColors
-                                                                  .hFFFFFF,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                        child: Text(lyric.text),
-                                                      );
-                                                    }),
+                                                  return ItemLineLyric(
+                                                    currentPosition:
+                                                        currentPosition,
+                                                    lyricModel: lyricModel,
                                                   );
                                                 },
                                               ),
@@ -141,27 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       homeViewModel.song;
                                                   if (lyricIndex <
                                                       song.lyrics.length - 1) {
-                                                    return Wrap(
-                                                      alignment:
-                                                          WrapAlignment.center,
-                                                      children: List.generate(
-                                                        song
-                                                            .lyrics[
-                                                                lyricIndex + 1]
-                                                            .lyrics
-                                                            .length,
-                                                        (index) => AppText(
-                                                          text: song
-                                                              .lyrics[
-                                                                  lyricIndex +
-                                                                      1]
-                                                              .lyrics[index]
-                                                              .text,
-                                                          fontSize: 14,
-                                                          color:
-                                                              AppColors.hFFFFFF,
-                                                        ),
-                                                      ),
+                                                    return ItemLyricDes(
+                                                      lyrics: song.lyrics,
+                                                      index: lyricIndex + 1,
                                                     );
                                                   }
                                                   return const SizedBox();
@@ -288,5 +244,127 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     homeViewModel.onDispose();
     super.dispose();
+  }
+}
+
+class ItemLyricDes extends StatelessWidget {
+  const ItemLyricDes({
+    super.key,
+    required this.lyrics,
+    required this.index,
+  });
+
+  final List<LyricModel> lyrics;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      children: List.generate(
+        lyrics[index].lyrics.length,
+        (indexItem) => AppText(
+          text: lyrics[index].lyrics[indexItem].text,
+          fontSize: 14,
+          color: AppColors.hFFFFFF,
+        ),
+      ),
+    );
+  }
+}
+
+class ItemLineLyric extends StatelessWidget {
+  const ItemLineLyric({
+    super.key,
+    required this.currentPosition,
+    required this.lyricModel,
+  });
+
+  final double currentPosition;
+  final LyricModel lyricModel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      alignment: WrapAlignment.center,
+      children: List.generate(lyricModel.lyrics.length, (index) {
+        final lyric = lyricModel.lyrics[index];
+        double space = 0.5;
+        if (index < lyricModel.lyrics.length - 1) {
+          space =
+              lyricModel.lyrics[index + 1].time - lyricModel.lyrics[index].time;
+          if (space == 0) {
+            space = 0.0005;
+          }
+        }
+        return ItemGroupChar(
+          lyric: lyric,
+          space: space,
+          currentPosition: currentPosition,
+        );
+      }),
+    );
+  }
+}
+
+class ItemGroupChar extends StatelessWidget {
+  const ItemGroupChar({
+    super.key,
+    required this.lyric,
+    required this.space,
+    required this.currentPosition,
+  });
+
+  final LyricItemModel lyric;
+  final double space;
+  final double currentPosition;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      children: List.generate(
+        lyric.text.length,
+        (indexChar) {
+          double charSeconds = space / lyric.text.length;
+          double secondsDuration = lyric.time + charSeconds * indexChar;
+          final isActive = currentPosition >= secondsDuration;
+
+          return ItemCharLyric(
+            text: lyric.text[indexChar],
+            milliseconds: secondsDuration.toInt(),
+            isActive: isActive,
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ItemCharLyric extends StatelessWidget {
+  const ItemCharLyric({
+    super.key,
+    required this.text,
+    required this.milliseconds,
+    required this.isActive,
+  });
+
+  final String text;
+  final int milliseconds;
+  final bool isActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedDefaultTextStyle(
+      curve: Curves.bounceInOut,
+      duration: Duration(
+        milliseconds: milliseconds,
+      ),
+      style: TextStyle(
+        fontSize: 16,
+        color: isActive ? AppColors.h000000 : AppColors.hFFFFFF,
+        fontWeight: FontWeight.bold,
+      ),
+      child: Text(text),
+    );
   }
 }
