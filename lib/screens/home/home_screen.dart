@@ -357,7 +357,7 @@ class ItemCharLyric extends StatelessWidget {
     return AnimatedDefaultTextStyle(
       curve: Curves.bounceInOut,
       duration: Duration(
-        milliseconds: milliseconds,
+        milliseconds: 400,
       ),
       style: TextStyle(
         fontSize: 16,
