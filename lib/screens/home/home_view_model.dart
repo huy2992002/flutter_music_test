@@ -1,11 +1,9 @@
-import 'dart:convert';
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_music_test/models/lyric_item_model.dart';
 import 'package:flutter_music_test/models/lyric_model.dart';
 import 'package:flutter_music_test/models/song_model.dart';
-import 'package:http/http.dart' as http;
 import 'package:xml/xml.dart';
 
 class HomeViewModel extends ChangeNotifier {
@@ -24,12 +22,11 @@ class HomeViewModel extends ChangeNotifier {
   }
 
   Future<void> fetchSong() async {
-    final lyrics = await fetchLyrics(
-        'https://storage.googleapis.com/ikara-storage/ikara/lyrics.xml');
+    final lyrics = await fetchLyrics('assets/lyrics/lyric.xml');
     song = SongModel(
       nameSong: 'Về đâu mái tóc người thương',
       singer: 'Quang Lê',
-      url: 'https://storage.googleapis.com/ikara-storage/tmp/beat.mp3',
+      url: 'audios/audio_beat.mp3',
       lyrics: lyrics,
     );
   }
@@ -66,9 +63,8 @@ class HomeViewModel extends ChangeNotifier {
 
   Future<List<LyricModel>> fetchLyrics(String urlLyrics) async {
     final lyrics = <LyricModel>[];
-    final response = await http.get(Uri.parse(urlLyrics));
-    final responseBody = utf8.decode(response.bodyBytes);
-    final xml = XmlDocument.parse(responseBody);
+    String xmlString = await rootBundle.loadString(urlLyrics);
+    final xml = XmlDocument.parse(xmlString);
     for (final param in xml.findAllElements('param')) {
       final lyricItems = <LyricItemModel>[];
       for (final i in param.findAllElements('i')) {
@@ -82,7 +78,7 @@ class HomeViewModel extends ChangeNotifier {
   void onPlay() {
     if (player.state == PlayerState.stopped ||
         player.state == PlayerState.completed) {
-      player.play(UrlSource(song.url));
+      player.play(AssetSource(song.url));
     } else if (player.state == PlayerState.playing) {
       player.pause();
     } else if (player.state == PlayerState.paused) {
@@ -92,7 +88,7 @@ class HomeViewModel extends ChangeNotifier {
 
   void onSeek(double value) {
     if (player.state == PlayerState.completed) {
-      player.play(UrlSource(song.url));
+      player.play(AssetSource(song.url));
     }
     player.seek(Duration(seconds: value.toInt()));
   }
